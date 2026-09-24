@@ -6,9 +6,65 @@ import { sleep } from "./util.mjs";
  * React listens for, and wait out the debounce before reading anything back.
  */
 
+/**
+ * Playwright's actionability wait is the right default for a control that is
+ * merely slow, but on one that is missing, hidden, disabled or readonly it can
+ * never succeed — it just burns actionTimeoutMs. P5 pushes ~20 abuse values
+ * through every input, so a single unfillable field cost 20 x 15s. Read the
+ * state directly instead: one evaluate, no waiting.
+ */
+async function elementState(page, selector) {
+  return page.evaluate((sel) => {
+    const el = document.querySelector(sel);
+    if (!el) return { missing: true };
+    const cs = getComputedStyle(el);
+    return {
+      missing: false,
+      disabled: !!el.disabled || el.getAttribute("aria-disabled") === "true",
+      readOnly: !!el.readOnly,
+      // offsetParent is null for display:none and for fixed elements; the rect
+      // check covers the latter.
+      hidden:
+        cs.visibility === "hidden" ||
+        cs.display === "none" ||
+        (el.offsetParent === null && el.getClientRects().length === 0),
+    };
+  }, selector);
+}
+
+/**
+ * Why a control cannot be driven, or null if it can. `needsEditable` is false
+ * for clicks and checkbox toggles, which work on a readonly element.
+ */
+async function blockedReason(page, selector, needsEditable) {
+  // Hydration can leave a control briefly unactionable, so a negative verdict
+  // is confirmed once after a short settle rather than trusted immediately.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const st = await elementState(page, selector);
+    let reason = null;
+    if (st.missing) reason = `control not present in the DOM (${selector})`;
+    else if (st.hidden) reason = "control is not visible";
+    else if (st.disabled) reason = "control is disabled";
+    else if (needsEditable && st.readOnly) reason = "control is readonly";
+    if (!reason) return null;
+    if (attempt === 0) await sleep(300);
+    else return reason;
+  }
+  return null;
+}
+
 export async function setControl(page, ctl, value) {
   const loc = page.locator(ctl.selector).first();
   const kind = ctl.type;
+
+  // The evaluate-based branches (range, color, contenteditable) set the value
+  // directly and do not wait on actionability, so they are not gated here.
+  const gated = kind !== "range" && kind !== "color" && kind !== "file";
+  if (gated) {
+    const needsEditable = !(kind === "checkbox" || kind === "radio");
+    const blocked = await blockedReason(page, ctl.selector, needsEditable);
+    if (blocked) return { ok: false, error: blocked };
+  }
 
   try {
     if (kind === "checkbox" || kind === "radio") {
@@ -69,6 +125,8 @@ export async function setControl(page, ctl, value) {
 }
 
 export async function clickControl(page, ctl) {
+  const blocked = await blockedReason(page, ctl.selector, false);
+  if (blocked) return { ok: false, error: blocked };
   try {
     await page.locator(ctl.selector).first().click({ timeout: LIMITS.actionTimeoutMs });
     await sleep(LIMITS.settleMs);

@@ -194,7 +194,8 @@ ${c.dim(`Repo: ${DEFAULT_REPO}   Site: ${PATHS.site}`)}
       log(c.dim(`  Next: qa triage --run ${id}`));
       log("");
     } finally {
-      if (!has("keep-server")) await server.stop();
+      if (has("keep-server")) server.detach?.();
+      else await server.stop();
     }
   },
 
@@ -220,7 +221,8 @@ ${c.dim(`Repo: ${DEFAULT_REPO}   Site: ${PATHS.site}`)}
       log(c.dim(`  Next: qa draft --run ${id}`));
       log("");
     } finally {
-      if (!has("keep-server")) await server.stop();
+      if (has("keep-server")) server.detach?.();
+      else await server.stop();
     }
   },
 

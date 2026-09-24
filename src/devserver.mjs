@@ -35,6 +35,34 @@ async function waitForHttp(url, timeoutMs) {
   throw new Error(`Server not ready after ${timeoutMs}ms (${lastErr})`);
 }
 
+/**
+ * Signal the whole process group. `child.kill()` reaches only npx; the
+ * `next dev` and `next-server` processes it forks live in the same group, so
+ * the negative pid is what actually stops them.
+ */
+function killGroup(child, signal) {
+  try {
+    process.kill(-child.pid, signal);
+  } catch {
+    // ESRCH — already gone, or never got its own group. Fall back to the
+    // direct child so a non-detached spawn still gets signalled.
+    try { child.kill(signal); } catch { /* already reaped */ }
+  }
+}
+
+async function stopTree(child, exited) {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  killGroup(child, "SIGTERM");
+  // child.killed only records that a signal was *sent*, so it can never be the
+  // condition for escalating. Wait for the real exit instead.
+  const timedOut = Symbol("timeout");
+  const raced = await Promise.race([exited, sleep(4000).then(() => timedOut)]);
+  if (raced === timedOut) {
+    killGroup(child, "SIGKILL");
+    await Promise.race([exited, sleep(2000)]);
+  }
+}
+
 export async function startServer({ mode = "dev", port = SERVER.port, quiet = true } = {}) {
   if (!(await portFree(port))) {
     // Something is already serving here. Use it rather than fighting over the
@@ -51,10 +79,16 @@ export async function startServer({ mode = "dev", port = SERVER.port, quiet = tr
 
   log(c.dim(`  starting next ${args[0]} on :${port} ...`));
 
+  // detached:true puts next in its own process group. `npx next dev` forks
+  // again into next-server, and a signal sent to npx alone leaves those
+  // grandchildren holding the port and the stdio pipes — which keeps this
+  // process's event loop alive forever. Killing the whole group is the only
+  // reliable shutdown.
   const child = spawn("npx", ["next", ...args], {
     cwd: PATHS.site,
     env: { ...process.env, NODE_ENV: mode === "prod" ? "production" : "development", PORT: String(port) },
     stdio: ["ignore", "pipe", "pipe"],
+    detached: true,
   });
 
   const logLines = [];
@@ -67,13 +101,27 @@ export async function startServer({ mode = "dev", port = SERVER.port, quiet = tr
   child.stderr.on("data", capture);
 
   let exited = false;
-  child.on("exit", (code) => { exited = true; if (code) logLines.push(`\n[server exited code ${code}]`); });
+  const exitedPromise = new Promise((resolve) => {
+    child.on("exit", (code) => {
+      exited = true;
+      if (code) logLines.push(`\n[server exited code ${code}]`);
+      resolve();
+    });
+  });
+
+  // The group is detached, so a Ctrl-C in the terminal no longer reaches next
+  // on its own. Without this the server would be orphaned and keep serving
+  // :4333 for the next run to silently reuse. Ordinary and failed runs are
+  // already covered by the caller's finally block.
+  const reap = () => { killGroup(child, "SIGKILL"); };
+  process.once("SIGINT", () => { reap(); process.exit(130); });
+  process.once("SIGTERM", () => { reap(); process.exit(143); });
 
   const origin = `http://127.0.0.1:${port}`;
   try {
     await waitForHttp(`${origin}/`, SERVER.bootTimeoutMs);
   } catch (e) {
-    child.kill("SIGTERM");
+    await stopTree(child, exitedPromise);
     throw new Error(`${e.message}\n--- server output ---\n${logLines.join("").slice(-4000)}`);
   }
   if (exited) throw new Error(`Server exited during boot:\n${logLines.join("").slice(-4000)}`);
@@ -84,11 +132,17 @@ export async function startServer({ mode = "dev", port = SERVER.port, quiet = tr
     origin,
     reused: false,
     serverLog: () => logLines.join(""),
-    stop: async () => {
-      if (child.killed) return;
-      child.kill("SIGTERM");
-      await sleep(600);
-      if (!child.killed) child.kill("SIGKILL");
+    stop: async () => stopTree(child, exitedPromise),
+    // --keep-server: let this process exit while next keeps running. The piped
+    // stdio and the child handle are what hold the event loop open, so both
+    // have to be released.
+    detach: () => {
+      child.stdout?.removeListener("data", capture);
+      child.stderr?.removeListener("data", capture);
+      child.stdout?.unref?.();
+      child.stderr?.unref?.();
+      child.unref();
+      log(c.dim(`  server left running on ${origin} (pid ${child.pid})`));
     },
   };
 }
