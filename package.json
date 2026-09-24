@@ -1,0 +1,14 @@
+{
+  "name": "ptb-qa-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Deep automated QA agent for productivetoolbox.com — drives every tool in a real browser, verifies logic against independently derived ground truth, triple-rechecks failures, and files deduplicated GitHub issues.",
+  "bin": { "qa": "./bin/qa.mjs" },
+  "scripts": {
+    "qa": "node bin/qa.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.50.0"
+  }
+}

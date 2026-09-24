@@ -1,0 +1,6 @@
+node_modules/
+reports/
+drafts/
+state/
+*.log
+probe-tmp.mjs

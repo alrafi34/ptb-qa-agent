@@ -1,0 +1,78 @@
+{
+  "slug": "acre-to-square-feet-converter",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "config/tools.ts description: \"Convert acres to square feet\". The on-page banner states \"1 acre = 43,560 sq ft\" and the settings panel states the formula \"sq ft = acres x 43,560\".",
+  "groundTruth": "The international acre is defined as 4,840 square yards. A square yard is 3 ft x 3 ft = 9 square feet. So 1 acre = 4,840 x 9 = 43,560 square feet exactly. The same figure follows from the historical definition of 1 chain x 1 furlong = 66 ft x 660 ft = 43,560 sq ft. This constant is definitional and is not taken from the site's source.",
+  "cases": [
+    {
+      "id": "one-acre",
+      "note": "The definitional case. If this is wrong, the conversion factor itself is wrong.",
+      "derivation": "1 acre is defined as 4,840 square yards; 1 square yard = 3 ft x 3 ft = 9 sq ft; 4,840 x 9 = 43,560. So 1 acre must display 43,560 sq ft.",
+      "inputs": { "Acre value": "1" },
+      "expect": [
+        { "type": "number", "near": "Square Feet", "value": 43560, "unit": "sq ft", "tolerance": { "abs": 0.01 }, "severity": "S1-critical" },
+        { "type": "noPoison" }
+      ]
+    },
+    {
+      "id": "five-acres",
+      "note": "Linear scaling, and a value large enough to expose comma-grouping bugs.",
+      "derivation": "Area scales linearly with the acre count: 5 x 43,560 sq ft = 217,800 sq ft. Computed by hand: 43,560 x 5 = 217,800.",
+      "inputs": { "Acre value": "5" },
+      "expect": [
+        { "type": "number", "near": "Square Feet", "value": 217800, "unit": "sq ft", "tolerance": { "abs": 0.01 }, "severity": "S1-critical" },
+        { "type": "noPoison" }
+      ]
+    },
+    {
+      "id": "quarter-acre",
+      "note": "A fractional input, the common residential lot size.",
+      "derivation": "A quarter of an acre is 43,560 / 4. 43,560 / 4 = 10,890 sq ft. (Check: 10,890 x 4 = 43,560.)",
+      "inputs": { "Acre value": "0.25" },
+      "expect": [
+        { "type": "number", "near": "Square Feet", "value": 10890, "unit": "sq ft", "tolerance": { "abs": 0.01 }, "severity": "S1-critical" },
+        { "type": "noPoison" }
+      ]
+    },
+    {
+      "id": "two-and-a-half-acres",
+      "note": "A decimal input that must not be truncated to an integer before multiplying.",
+      "derivation": "2.5 x 43,560 = (2 x 43,560) + (0.5 x 43,560) = 87,120 + 21,780 = 108,900 sq ft. If the tool truncated 2.5 to 2 it would show 87,120 instead.",
+      "inputs": { "Acre value": "2.5" },
+      "expect": [
+        { "type": "number", "near": "Square Feet", "value": 108900, "unit": "sq ft", "tolerance": { "abs": 0.01 }, "severity": "S1-critical" },
+        { "type": "noPoison" }
+      ]
+    },
+    {
+      "id": "precision-zero",
+      "note": "The precision selector must change the displayed decimals without changing the value.",
+      "derivation": "Rounding 43,560 to 0 decimal places leaves 43,560 unchanged, because the exact value is an integer. Selecting 0 decimals must therefore still display 43,560 and must not alter the magnitude.",
+      "inputs": { "Acre value": "1", "Decimal Precision": "0" },
+      "expect": [
+        { "type": "number", "near": "Square Feet", "value": 43560, "unit": "sq ft", "tolerance": { "abs": 0.01 }, "severity": "S1-critical" }
+      ]
+    },
+    {
+      "id": "zero-acres",
+      "note": "Zero is a legitimate input, not an error. Asserted positively on the result card, because the page also carries a static reference table that lists the non-zero conversions.",
+      "derivation": "0 acres encloses no land, so the area is 0 x 43,560 = 0 sq ft. Any non-zero figure on the result card, or a NaN, would be wrong.",
+      "inputs": { "Acre value": "0" },
+      "expect": [
+        { "type": "number", "near": "Square Feet", "value": 0, "unit": "sq ft", "tolerance": { "abs": 0.001 }, "severity": "S1-critical" },
+        { "type": "noPoison" }
+      ]
+    },
+    {
+      "id": "hundred-acres",
+      "note": "Three orders of magnitude above the nominal case, where comma grouping and float precision both matter.",
+      "derivation": "100 x 43,560 = 4,356,000 sq ft. By hand: 43,560 x 100 shifts the decimal two places, giving 4,356,000.",
+      "inputs": { "Acre value": "100" },
+      "expect": [
+        { "type": "number", "near": "Square Feet", "value": 4356000, "unit": "sq ft", "tolerance": { "abs": 0.01 }, "severity": "S1-critical" },
+        { "type": "noPoison" }
+      ]
+    }
+  ]
+}
