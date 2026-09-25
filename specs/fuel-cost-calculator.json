@@ -25,7 +25,8 @@
           "tolerance": {
             "abs": 0.01
           },
-          "severity": "S1-critical"
+          "severity": "S1-critical",
+          "scope": "page"
         },
         {
           "type": "number",
@@ -35,7 +36,8 @@
           "tolerance": {
             "abs": 0.01
           },
-          "severity": "S1-critical"
+          "severity": "S1-critical",
+          "scope": "page"
         },
         {
           "type": "noPoison"
@@ -62,7 +64,8 @@
           "tolerance": {
             "abs": 0.01
           },
-          "severity": "S1-critical"
+          "severity": "S1-critical",
+          "scope": "page"
         }
       ]
     }

@@ -17,7 +17,7 @@
       "expect": [
         {
           "type": "number",
-          "near": "Motor Power",
+          "near": "Kilowatts",
           "value": 7.854,
           "unit": "kW",
           "tolerance": {
@@ -41,7 +41,7 @@
       "expect": [
         {
           "type": "number",
-          "near": "Motor Power",
+          "near": "Kilowatts",
           "value": 7.457,
           "unit": "kW",
           "tolerance": {

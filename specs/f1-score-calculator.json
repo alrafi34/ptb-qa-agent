@@ -17,9 +17,10 @@
       "expect": [
         {
           "type": "matches",
-          "value": "84\\.2\\d?\\s*%|0\\.842\\d",
+          "value": "F1 Score Result\\s*84\\.2\\d?\\s*%",
           "severity": "S1-critical",
-          "what": "F1 = 0.8421 (84.21%)"
+          "what": "the result card must read F1 = 84.21% (the SEO copy's static 0.8421 example must not satisfy this)",
+          "scope": "page"
         },
         {
           "type": "noPoison"
