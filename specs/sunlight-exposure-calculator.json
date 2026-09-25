@@ -1,0 +1,70 @@
+{
+  "slug": "sunlight-exposure-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Simulate sunlight exposure on buildings... Visualize sun position...\" Surface Type: Wall / Roof / Ground; Orientation slider 0–360° (180° = S).",
+  "groundTruth": "Solar declination (Cooper 1969): δ = 23.45° × sin(360/365 × (284 + n)). Solar elevation at solar noon = 90° − |φ − δ|. Direct beam on a vertical wall is proportional to cos(elevation) × cos(sun azimuth − wall azimuth), and is zero when the sun is behind the wall.",
+  "cases": [
+    {
+      "id": "north-wall-equinox-noon",
+      "derivation": "20 March 2026 is day n = 79: δ = 23.45 × sin(360/365 × 363) = 23.45 × sin(358.03°) = −0.81°. At latitude 40°N at 12:00 solar time the sun is due south at elevation 90 − (40 + 0.81) = 49.2°. A wall facing north (orientation 0°) has the sun directly behind it: no direct sunlight, 0% exposure.",
+      "inputs": {
+        "Latitude (°)": "40",
+        "Longitude (°)": "0",
+        "Date": "2026-03-20",
+        "Orientation": "0",
+        "Surface Type": "wall",
+        "Time Control": "12"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Sun Elevation",
+          "value": 49.2,
+          "unit": "°",
+          "tolerance": {
+            "abs": 1.5
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "number",
+          "near": "Exposure:",
+          "value": 0,
+          "unit": "%",
+          "tolerance": {
+            "abs": 2
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    },
+    {
+      "id": "south-wall-equinox-noon",
+      "derivation": "Same sun (elevation 49.2°, azimuth 180°). A south-facing wall (180°) meets the beam head-on in azimuth, so its incidence factor is cos(49.2°) × cos(0°) = 0.653 → about 65%. (sin 49.2° = 0.757 would be the factor for a horizontal roof, not a vertical wall.)",
+      "inputs": {
+        "Latitude (°)": "40",
+        "Longitude (°)": "0",
+        "Date": "2026-03-20",
+        "Orientation": "180",
+        "Surface Type": "wall",
+        "Time Control": "12"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Exposure:",
+          "value": 65,
+          "unit": "%",
+          "tolerance": {
+            "abs": 4
+          },
+          "severity": "S1-critical"
+        }
+      ]
+    }
+  ]
+}

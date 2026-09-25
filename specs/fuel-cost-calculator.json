@@ -1,0 +1,70 @@
+{
+  "slug": "fuel-cost-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate fuel needed and total trip cost from distance, MPG or km/L, and fuel price.\"",
+  "groundTruth": "Fuel needed = distance ÷ efficiency; trip cost = fuel needed × price per unit of fuel.",
+  "cases": [
+    {
+      "id": "imperial-100mi-25mpg",
+      "derivation": "100 miles ÷ 25 mpg = 4 gallons; 4 × $3.50 = $14.00.",
+      "inputs": {
+        "Trip Distance": "100",
+        "Fuel Efficiency": "25",
+        "$": "3.50"
+      },
+      "click": [
+        "Calculate Cost"
+      ],
+      "expect": [
+        {
+          "type": "number",
+          "near": "Total Cost",
+          "value": 14,
+          "unit": "USD",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "number",
+          "near": "Fuel Required",
+          "value": 4,
+          "unit": "gal",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    },
+    {
+      "id": "imperial-350mi-28mpg",
+      "derivation": "350 ÷ 28 = 12.5 gallons; 12.5 × $4.00 = $50.00.",
+      "inputs": {
+        "Trip Distance": "350",
+        "Fuel Efficiency": "28",
+        "$": "4"
+      },
+      "click": [
+        "Calculate Cost"
+      ],
+      "expect": [
+        {
+          "type": "number",
+          "near": "Total Cost",
+          "value": 50,
+          "unit": "USD",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        }
+      ]
+    }
+  ]
+}

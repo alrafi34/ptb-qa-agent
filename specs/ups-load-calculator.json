@@ -1,0 +1,43 @@
+{
+  "slug": "ups-load-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate required UPS capacity based on connected devices. Estimate total power load, con...\" Controls: Safety Margin, Power Factor.",
+  "groundTruth": "Required VA = load (W) × (1 + margin) ÷ power factor; a UPS is chosen at the next standard size at or above it.",
+  "cases": [
+    {
+      "id": "desktop-300W",
+      "note": "The default device list holds one 300 W desktop PC.",
+      "derivation": "300 W × 1.20 margin = 360 W; ÷ 0.8 PF = 450 VA. The next standard UPS size at or above 450 VA is 500 VA.",
+      "inputs": {
+        "Safety Margin:": "20",
+        "Power Factor:": "0.8"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Required VA:",
+          "value": 450,
+          "unit": "VA",
+          "tolerance": {
+            "abs": 0.5
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "number",
+          "near": "Recommended UPS",
+          "value": 500,
+          "unit": "VA",
+          "tolerance": {
+            "abs": 0.5
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    }
+  ]
+}

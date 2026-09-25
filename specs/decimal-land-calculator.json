@@ -1,0 +1,72 @@
+{
+  "slug": "decimal-land-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Convert Decimal and Shotok land units to Acre, Katha, Bigha, Square Feet, Square Meter, Hectare...\" with a Regional Standard selector (Bangladesh, West Bengal, Bihar, Nepal).",
+  "groundTruth": "1 decimal = 1/100 acre = 435.6 sq ft (1 acre = 43,560 sq ft by definition). Katha in Bangladesh/West Bengal = 720 sq ft; in Bihar = 1,361.25 sq ft (1 Bihar bigha = 27,225 sq ft = 20 katha).",
+  "cases": [
+    {
+      "id": "10-decimal-bangladesh",
+      "derivation": "10 decimal × 435.6 = 4,356 sq ft. In Bangladesh 1 katha = 720 sq ft, so 4,356 ÷ 720 = 6.05 katha. In acres: 10 ÷ 100 = 0.1 acre.",
+      "inputs": {
+        "Regional Standard": "bangladesh",
+        "Decimal Precision": "4",
+        "Land area value": "10",
+        "From Unit": "decimal"
+      },
+      "expect": [
+        {
+          "type": "numberAny",
+          "value": 4356,
+          "unit": "sq ft",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "numberAny",
+          "value": 6.05,
+          "unit": "katha",
+          "tolerance": {
+            "abs": 0.0001
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "numberAny",
+          "value": 0.1,
+          "unit": "acre",
+          "tolerance": {
+            "abs": 0.0001
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    },
+    {
+      "id": "10-decimal-bihar",
+      "derivation": "Same 4,356 sq ft; a Bihar katha is 1,361.25 sq ft (27,225 sq ft per bigha ÷ 20), so 4,356 ÷ 1,361.25 = 3.2 katha exactly (1,361.25 × 3.2 = 4,356).",
+      "inputs": {
+        "Regional Standard": "bihar",
+        "Decimal Precision": "4",
+        "Land area value": "10",
+        "From Unit": "decimal"
+      },
+      "expect": [
+        {
+          "type": "numberAny",
+          "value": 3.2,
+          "unit": "katha",
+          "tolerance": {
+            "abs": 0.0001
+          },
+          "severity": "S1-critical"
+        }
+      ]
+    }
+  ]
+}

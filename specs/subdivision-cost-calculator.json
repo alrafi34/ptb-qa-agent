@@ -1,0 +1,59 @@
+{
+  "slug": "subdivision-cost-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Estimate the total cost of subdividing land into multiple plots.\" On-page formula: \"Total = Survey + Legal + Permits + Utilities + Road + Drainage + Misc; Cost/Plot = Total ÷ Plots; Land/Plot = Land Size ÷ Plots\".",
+  "groundTruth": "Sum of the cost lines; per-plot values divide by the plot count.",
+  "cases": [
+    {
+      "id": "10-acres-4-plots",
+      "derivation": "2,000 + 3,000 + 1,000 + 4,000 + 8,000 + 2,000 + 0 = $20,000 total. ÷ 4 plots = $5,000 per plot. 10 acres ÷ 4 = 2.5 acres per plot.",
+      "inputs": {
+        "Currency": "USD",
+        "Total land size": "10",
+        "Land Unit": "acres",
+        "Number of plots": "4",
+        "Surveying Cost": "2000",
+        "Legal Fees": "3000",
+        "Permit & Approval Cost": "1000",
+        "Utility Installation": "4000",
+        "Road Development": "8000",
+        "Drainage / Infrastructure": "2000",
+        "Miscellaneous Cost": "0"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Total Subdivision Cost",
+          "value": 20000,
+          "unit": "USD",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "numberAny",
+          "value": 5000,
+          "unit": "USD per plot",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "numberAny",
+          "value": 2.5,
+          "unit": "acres per plot",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "slug": "air-conditioner-power-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate AC power consumption in watts, monthly electricity cost, and required generator size.\" The page's own FAQ: \"Power (W) = Cooling Capacity (BTU/h) ÷ EER\", \"How many watts does a 1.5 ton AC use? ... At EER 10, 1,800W ... At EER 12, 1,500W\", and \"A 1.5 ton AC does not consume 1.5 kW — it consumes 1,500–2,250W depending on efficiency\".",
+  "groundTruth": "1 ton of refrigeration = 12,000 BTU/h of cooling by definition. Electrical input (W) = cooling (BTU/h) ÷ EER (BTU/h per W). Residential units span roughly EER 8 (old) to EER 12+ (efficient).",
+  "cases": [
+    {
+      "id": "1.5-ton-draw",
+      "note": "The page's headline question.",
+      "derivation": "1.5 ton × 12,000 = 18,000 BTU/h of cooling. Electrical draw = 18,000 ÷ EER: EER 12 → 1,500 W, EER 10 → 1,800 W, EER 8 → 2,250 W. Any credible answer lies between 1,500 and 2,250 W; 1,875 ± 375 W covers that band. 5,275 W would be the cooling capacity itself (1.5 × 3,517 W), not the electrical draw.",
+      "inputs": {
+        "AC Capacity (Ton)": "1.5",
+        "Days Per Month": "30"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Power:",
+          "value": 1875,
+          "unit": "W",
+          "tolerance": {
+            "abs": 375
+          },
+          "severity": "S1-critical",
+          "what": "electrical draw of a 1.5 ton AC",
+          "scope": "page"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    },
+    {
+      "id": "1-ton-draw",
+      "note": "A second size, so the error cannot hide behind one value.",
+      "derivation": "1 ton = 12,000 BTU/h. At EER 8–12 the draw is 12,000 ÷ 12 = 1,000 W to 12,000 ÷ 8 = 1,500 W; 1,250 ± 250 W covers it.",
+      "inputs": {
+        "AC Capacity (Ton)": "1",
+        "Days Per Month": "30"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Power:",
+          "value": 1250,
+          "unit": "W",
+          "tolerance": {
+            "abs": 250
+          },
+          "severity": "S1-critical",
+          "what": "electrical draw of a 1 ton AC",
+          "scope": "page"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "slug": "f1-score-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate F1 score instantly using confusion matrix or precision and recall values.\"",
+  "groundTruth": "Precision = TP/(TP+FP); Recall = TP/(TP+FN); F1 = 2PR/(P+R) (harmonic mean).",
+  "cases": [
+    {
+      "id": "confusion-80-20-10-890",
+      "derivation": "TP 80, FP 20, FN 10: precision = 80/100 = 0.8; recall = 80/90 = 0.8889; F1 = 2 × 0.8 × 0.8889 ÷ (0.8 + 0.8889) = 1.4222 ÷ 1.6889 = 0.8421 (equivalently 2TP/(2TP+FP+FN) = 160/190 = 0.8421).",
+      "inputs": {
+        "True Positive (TP)": "80",
+        "False Negative (FN)": "10",
+        "False Positive (FP)": "20",
+        "True Negative (TN)": "890"
+      },
+      "expect": [
+        {
+          "type": "matches",
+          "value": "84\\.2\\d?\\s*%|0\\.842\\d",
+          "severity": "S1-critical",
+          "what": "F1 = 0.8421 (84.21%)"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    }
+  ]
+}

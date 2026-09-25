@@ -1,0 +1,32 @@
+{
+  "slug": "soil-compaction-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Quickly calculate soil compaction percentage using field and maximum dry density.\"",
+  "groundTruth": "Relative compaction (%) = field dry density ÷ maximum (Proctor) dry density × 100.",
+  "cases": [
+    {
+      "id": "92.5pct",
+      "derivation": "1.85 g/cm³ ÷ 2.00 g/cm³ = 0.925 → 92.5%.",
+      "inputs": {
+        "Field Dry Density": "1.85",
+        "Maximum Dry Density": "2.00"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Compaction Percentage",
+          "value": 92.5,
+          "unit": "%",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "slug": "glass-panel-size-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate glass panel dimensions instantly for windows, doors, and partitions.\" Inputs: opening size, clearances on each side, number of panels, gap between panels.",
+  "groundTruth": "Glass height = opening height − top − bottom clearance. Width available = opening width − left − right clearance; with n panels there are n − 1 gaps; each panel = (available − gaps) ÷ n.",
+  "cases": [
+    {
+      "id": "two-panels",
+      "derivation": "Opening 1,200 × 2,000 mm, 5 mm clearance each side, 2 panels, 10 mm gap. Height = 2,000 − 5 − 5 = 1,990 mm. Width available = 1,200 − 10 = 1,190 mm; one gap of 10 mm leaves 1,180; ÷ 2 = 590 mm per panel.",
+      "inputs": {
+        "Unit": "mm",
+        "Opening Width": "1200",
+        "Opening Height": "2000",
+        "Left": "5",
+        "Right": "5",
+        "Top": "5",
+        "Bottom": "5",
+        "Number of Panels": "2",
+        "Gap Between Panels": "10"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Panel Width",
+          "value": 590,
+          "unit": "mm",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "number",
+          "near": "Glass Height:",
+          "value": 1990,
+          "unit": "mm",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    }
+  ]
+}

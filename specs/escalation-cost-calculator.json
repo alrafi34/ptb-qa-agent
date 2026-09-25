@@ -1,0 +1,91 @@
+{
+  "slug": "escalation-cost-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate construction cost escalation instantly. Estimate future project costs using compound or simple escalation...\" Result: \"Future Cost\", \"Total Increase\".",
+  "groundTruth": "Compound escalation: C·(1 + r)^n. Simple escalation: C·(1 + r·n).",
+  "cases": [
+    {
+      "id": "compound-8pct-2yr",
+      "derivation": "$1,000,000 at 8% compounded for 2 years: 1.08 × 1.08 = 1.1664, so 1,000,000 × 1.1664 = $1,166,400; increase = $166,400.",
+      "inputs": {
+        "Calculation Type": "compound",
+        "Currency": "USD",
+        "Base Project Cost": "1000000",
+        "Duration (Years)": "2",
+        "Escalation Rate (%)": "8"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Future Cost",
+          "value": 1166400,
+          "unit": "USD",
+          "tolerance": {
+            "abs": 1
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "number",
+          "near": "Total Increase",
+          "value": 166400,
+          "unit": "USD",
+          "tolerance": {
+            "abs": 1
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    },
+    {
+      "id": "simple-8pct-2yr",
+      "derivation": "Simple escalation adds 8% of the base per year: 2 × 8% = 16%; 1,000,000 × 1.16 = $1,160,000.",
+      "inputs": {
+        "Calculation Type": "simple",
+        "Currency": "USD",
+        "Base Project Cost": "1000000",
+        "Duration (Years)": "2",
+        "Escalation Rate (%)": "8"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Future Cost",
+          "value": 1160000,
+          "unit": "USD",
+          "tolerance": {
+            "abs": 1
+          },
+          "severity": "S1-critical"
+        }
+      ]
+    },
+    {
+      "id": "compound-5pct-10yr",
+      "derivation": "1.05^10 = 1.628895 (1.05² = 1.1025; ^4 = 1.21550625; ^8 = 1.47745544; × 1.1025 = 1.62889463). $250,000 × 1.62889463 = $407,223.66.",
+      "inputs": {
+        "Calculation Type": "compound",
+        "Currency": "USD",
+        "Base Project Cost": "250000",
+        "Duration (Years)": "10",
+        "Escalation Rate (%)": "5"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Future Cost",
+          "value": 407223.66,
+          "unit": "USD",
+          "tolerance": {
+            "abs": 1
+          },
+          "severity": "S1-critical"
+        }
+      ]
+    }
+  ]
+}

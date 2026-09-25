@@ -1,0 +1,62 @@
+{
+  "slug": "plot-division-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Divide land into equal plots instantly. Calculate plot sizes, dimensions, and optimal layouts with road spacing support.\" On-page: result card \"Plot Size (Each)\", \"Road Area\" with the note \"Road area deducted from total\", \"Usable Land\", \"Layout\" (rows × cols) and \"Plot Dimensions\" (width × length). Land units offered: Square Feet, Square Meter, Decimal, Acre, Katha, Bigha, Hectare.",
+  "groundTruth": "Equal division: each plot = usable land ÷ number of plots. Internal roads run between the rows and between the columns of the plot grid; where a horizontal and a vertical road cross, the overlap is one road-width square and must be counted once. Unit facts used: 1 decimal = 1/100 acre = 435.6 sq ft (1 acre = 43,560 sq ft by definition).",
+  "cases": [
+    {
+      "id": "no-road-sqft",
+      "note": "Plain equal division with no road — the core promise.",
+      "derivation": "4,356 sq ft split into 4 equal plots: 4,356 ÷ 4 = 1,089 sq ft each.",
+      "inputs": { "Total Land Size": "4356", "Land Unit": "sqft", "Number of Plots": "4" },
+      "expect": [
+        { "type": "number", "near": "Plot Size (Each)", "value": 1089, "unit": "sq ft", "tolerance": { "abs": 0.01 }, "severity": "S1-critical" },
+        { "type": "noPoison" }
+      ]
+    },
+    {
+      "id": "no-road-decimal",
+      "note": "The same division in decimal, the unit this page's audience uses.",
+      "derivation": "10 decimal split into 4 equal plots: 10 ÷ 4 = 2.5 decimal each. Division is unit-independent when no other quantity is involved.",
+      "inputs": { "Total Land Size": "10", "Land Unit": "decimal", "Number of Plots": "4" },
+      "expect": [
+        { "type": "number", "near": "Plot Size (Each)", "value": 2.5, "unit": "decimal", "tolerance": { "abs": 0.01 }, "severity": "S1-critical" },
+        { "type": "noPoison" }
+      ]
+    },
+    {
+      "id": "road-2x2-sqft",
+      "note": "A square lot divided into a 2 × 2 grid with a 10 ft road between the rows and the columns — a cross of two roads.",
+      "derivation": "Lot 66 ft × 66 ft = 4,356 sq ft. A 2 × 2 grid needs one road across (66 ft × 10 ft = 660 sq ft) and one road down (66 ft × 10 ft = 660 sq ft). They overlap in a 10 ft × 10 ft square (100 sq ft) that must be counted once: road area = 660 + 660 − 100 = 1,220 sq ft. Usable land = 4,356 − 1,220 = 3,136 sq ft; per plot = 3,136 ÷ 4 = 784 sq ft. Each plot is (66 − 10) ÷ 2 = 28 ft wide and 28 ft long; check 28 × 28 = 784.",
+      "inputs": { "Total Land Size": "4356", "Land Unit": "sqft", "Number of Plots": "4", "Land Width": "66", "Land Length": "66", "Road Width": "10" },
+      "expect": [
+        { "type": "number", "near": "Road Area", "value": 1220, "unit": "sq ft", "tolerance": { "abs": 0.5 }, "severity": "S1-critical" },
+        { "type": "number", "near": "Plot Size (Each)", "value": 784, "unit": "sq ft", "tolerance": { "abs": 0.5 }, "severity": "S1-critical" },
+        { "type": "number", "near": "Plot Dimensions", "value": 28, "unit": "ft", "tolerance": { "abs": 0.01 }, "severity": "S1-critical", "what": "plot width must be (66 − 10) ÷ 2 = 28 ft" },
+        { "type": "noPoison" }
+      ]
+    },
+    {
+      "id": "road-2x2-decimal",
+      "note": "The identical lot entered as 10 decimal. The answer must be the same land, expressed in decimal — and never negative.",
+      "derivation": "10 decimal × 435.6 sq ft = 4,356 sq ft, the same 66 ft × 66 ft lot as the previous case. From that case each plot is 784 sq ft; 784 ÷ 435.6 = 1.7998 ≈ 1.80 decimal. A negative plot size is impossible for any real division of land.",
+      "inputs": { "Total Land Size": "10", "Land Unit": "decimal", "Number of Plots": "4", "Land Width": "66", "Land Length": "66", "Road Width": "10" },
+      "expect": [
+        { "type": "number", "near": "Plot Size (Each)", "value": 1.8, "unit": "decimal", "tolerance": { "abs": 0.01 }, "severity": "S1-critical" },
+        { "type": "noPoison" }
+      ]
+    },
+    {
+      "id": "seven-plots-dimensions",
+      "note": "A prime plot count: 7 equal rectangles can only be laid out as 1 × 7 or 7 × 1, so the dimensions must multiply back to the plot area.",
+      "derivation": "Lot 70 ft × 40 ft = 2,800 sq ft, no road, 7 plots: 2,800 ÷ 7 = 400 sq ft each. Seven equal rectangles filling the lot are either 7 across (70 ÷ 7 = 10 ft wide × 40 ft long) or 7 down (70 ft wide × 40 ÷ 7 = 5.71 ft long); both give 400 sq ft. Any other pair (e.g. from an 8-cell 2 × 4 grid) does not multiply to 400.",
+      "inputs": { "Total Land Size": "2800", "Land Unit": "sqft", "Number of Plots": "7", "Land Width": "70", "Land Length": "40" },
+      "expect": [
+        { "type": "number", "near": "Plot Size (Each)", "value": 400, "unit": "sq ft", "tolerance": { "abs": 0.01 }, "severity": "S1-critical" },
+        { "type": "matches", "value": "10\\.00 × 40\\.00|70\\.00 × 5\\.71", "severity": "S1-critical", "scope": "produced", "what": "plot dimensions must be 10 × 40 ft or 70 × 5.71 ft (7 equal plots)" },
+        { "type": "noPoison" }
+      ]
+    }
+  ]
+}

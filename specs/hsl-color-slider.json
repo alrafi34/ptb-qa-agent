@@ -1,0 +1,48 @@
+{
+  "slug": "hsl-color-slider",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Interactive HSL color picker with live preview, format conversion...\" Hue input and slider run from 0 to 360.",
+  "groundTruth": "HSL→RGB (CSS Color 4): hue is an angle, so 360° is the same colour as 0°. hsl(0/360, 100%, 50%) = rgb(255, 0, 0) = #FF0000; hsl(210, 50%, 40%) = #336699.",
+  "cases": [
+    {
+      "id": "hue-210",
+      "derivation": "hsl(210°, 50%, 40%): C = (1 − |2×0.4 − 1|) × 0.5 = 0.4; X = C × (1 − |(210/60 mod 2) − 1|) = 0.4 × 0.5 = 0.2; m = 0.4 − 0.2 = 0.2. Hue 180–240 gives (0, X, C) → (0, 0.2, 0.4) + m = (0.2, 0.4, 0.6) → (51, 102, 153) = #336699.",
+      "inputs": {
+        "Hue": "210",
+        "Saturation (%)": "50",
+        "Lightness (%)": "40"
+      },
+      "expect": [
+        {
+          "type": "matches",
+          "value": "#?336699",
+          "flags": "i",
+          "severity": "S1-critical",
+          "what": "hex of hsl(210,50%,40%)"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    },
+    {
+      "id": "hue-360-is-red",
+      "derivation": "Hue is an angle: 360° ≡ 0°. hsl(360°, 100%, 50%) is therefore pure red: C = 1, X = 0, m = 0 → (255, 0, 0) = #FF0000. The slider's maximum is 360, so users reach this value by dragging to the end.",
+      "inputs": {
+        "Hue": "360",
+        "Saturation (%)": "100",
+        "Lightness (%)": "50"
+      },
+      "expect": [
+        {
+          "type": "matches",
+          "value": "#?FF0000",
+          "flags": "i",
+          "severity": "S2-major",
+          "what": "hsl(360,100%,50%) must be red"
+        }
+      ]
+    }
+  ]
+}

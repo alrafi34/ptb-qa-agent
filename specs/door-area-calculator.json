@@ -1,0 +1,54 @@
+{
+  "slug": "door-area-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate door opening area instantly using height and width.\"",
+  "groundTruth": "Area of a rectangle = height × width.",
+  "cases": [
+    {
+      "id": "7x3ft",
+      "derivation": "A 7 ft × 3 ft door: 7 × 3 = 21 sq ft.",
+      "inputs": {
+        "Measurement Unit": "ft",
+        "Height": "7",
+        "Width": "3"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Door Area",
+          "value": 21,
+          "unit": "sq ft",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    },
+    {
+      "id": "2.1x0.9m",
+      "derivation": "A standard 2.1 m high, 0.9 m wide metric door leaf: area = height × width = 2.1 × 0.9. By hand: 2 × 0.9 = 1.8, plus 0.1 × 0.9 = 0.09, total 1.89 m².",
+      "inputs": {
+        "Measurement Unit": "m",
+        "Height": "2.1",
+        "Width": "0.9"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Door Area",
+          "value": 1.89,
+          "unit": "m²",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        }
+      ]
+    }
+  ]
+}

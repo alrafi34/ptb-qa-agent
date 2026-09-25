@@ -1,0 +1,56 @@
+{
+  "slug": "shadow-length-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate shadow length from object height and sun elevation angle.\"",
+  "groundTruth": "A vertical object of height h lit by the sun at elevation angle α casts a shadow of length h / tan α on level ground.",
+  "cases": [
+    {
+      "id": "45deg",
+      "derivation": "tan 45° = 1, so the shadow equals the height: 10 m ÷ 1 = 10 m.",
+      "inputs": {
+        "Unit": "meters",
+        "Decimal Places": "2",
+        "Object Height": "10",
+        "Sun Elevation Angle:": "45"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Shadow Length",
+          "value": 10,
+          "unit": "m",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    },
+    {
+      "id": "30deg",
+      "derivation": "tan 30° = 1/√3 = 0.57735, so shadow = 10 ÷ 0.57735 = 10√3 = 17.32 m.",
+      "inputs": {
+        "Unit": "meters",
+        "Decimal Places": "2",
+        "Object Height": "10",
+        "Sun Elevation Angle:": "30"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Shadow Length",
+          "value": 17.32,
+          "unit": "m",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        }
+      ]
+    }
+  ]
+}

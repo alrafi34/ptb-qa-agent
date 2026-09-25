@@ -1,0 +1,56 @@
+{
+  "slug": "land-price-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate total land cost instantly using area size and rate per unit.\" On-page formula: \"Total = Area × Rate\", with separate Area Unit and Rate Unit.",
+  "groundTruth": "Total = area expressed in the rate's unit × rate. 1 acre = 100 decimal.",
+  "cases": [
+    {
+      "id": "5-decimal-at-20k",
+      "derivation": "5 decimal × $20,000 per decimal = $100,000.",
+      "inputs": {
+        "Land area": "5",
+        "Area Unit": "decimal",
+        "Price rate": "20000",
+        "Rate Unit": "decimal"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Total Land Price",
+          "value": 100000,
+          "unit": "USD",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    },
+    {
+      "id": "1-acre-rate-per-decimal",
+      "derivation": "1 acre = 100 decimal (1 decimal is 1/100 acre). 100 × $500 per decimal = $50,000.",
+      "inputs": {
+        "Land area": "1",
+        "Area Unit": "acre",
+        "Price rate": "500",
+        "Rate Unit": "decimal"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Total Land Price",
+          "value": 50000,
+          "unit": "USD",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        }
+      ]
+    }
+  ]
+}

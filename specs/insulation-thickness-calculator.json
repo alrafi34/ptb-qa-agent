@@ -1,0 +1,60 @@
+{
+  "slug": "insulation-thickness-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate required insulation thickness for pipes, walls, and surfaces using thermal conductivity...\" Modes: Target surface temperature, Max heat loss, Target U-value.",
+  "groundTruth": "Steady state through a flat layer: heat conducted through the insulation k·(Tf − Ts)/t equals heat leaving the surface h·(Ts − Ta). So t = k·(Tf − Ts) / (h·(Ts − Ta)). For still indoor air the combined surface coefficient h is about 8–12 W/m²·K (convection + radiation). For a U-value target (surface resistances neglected) t = k / U.",
+  "cases": [
+    {
+      "id": "surface-temp-150C",
+      "note": "The surface-temperature method on a hot surface.",
+      "derivation": "k = 0.04 W/m·K, fluid 150 °C, target surface 40 °C, ambient 25 °C. t = 0.04 × (150 − 40) / (h × (40 − 25)) = 4.4 / (15h) m. With h = 12 → 24.4 mm; h = 10 → 29.3 mm; h = 8 → 36.7 mm. 30 ± 7 mm covers the band. A result near 293 mm would mean h was left out (h = 1).",
+      "inputs": {
+        "Calculation Mode": "surface",
+        "Thickness Unit": "mm",
+        "Ambient Temperature (°C)": "25",
+        "Thermal Conductivity (W/m·K)": "0.04",
+        "Fluid Temperature (°C)": "150",
+        "Target Surface Temp (°C)": "40"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Required Thickness",
+          "value": 30,
+          "unit": "mm",
+          "tolerance": {
+            "abs": 7
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    },
+    {
+      "id": "u-value-0.25",
+      "note": "The U-value method, which should be right.",
+      "derivation": "t = k / U = 0.04 W/m·K ÷ 0.25 W/m²·K = 0.16 m = 160 mm.",
+      "inputs": {
+        "Calculation Mode": "uvalue",
+        "Thickness Unit": "mm",
+        "Thermal Conductivity (W/m·K)": "0.04",
+        "Target U-Value (W/m²·K)": "0.25"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Required Thickness",
+          "value": 160,
+          "unit": "mm",
+          "tolerance": {
+            "rel": 0.01
+          },
+          "severity": "S1-critical"
+        }
+      ]
+    }
+  ]
+}

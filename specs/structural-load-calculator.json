@@ -1,0 +1,64 @@
+{
+  "slug": "structural-load-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate structural loads for beams and slabs...\" Unit System: Metric (kN/m²) or Imperial (psf). Load presets: \"Residential Floor — Typical residential building\", etc.",
+  "groundTruth": "Total area load = area × (dead + live + additional). 1 kN/m² = 1,000 N ÷ 4.44822 N/lbf ÷ 10.7639 ft²/m² = 20.885 psf. A preset describes a physical floor, so its loads must mean the same thing in either unit system.",
+  "cases": [
+    {
+      "id": "metric-residential-preset",
+      "derivation": "Residential Floor preset is 3 + 2 + 0.5 = 5.5 kN/m² (dead + live + additional, as the metric preset fills). On 10 m²: 10 × 5.5 = 55 kN.",
+      "inputs": {
+        "Calculation Type": "area",
+        "Area (": "10"
+      },
+      "click": [
+        "Metric",
+        "Residential Floor"
+      ],
+      "expect": [
+        {
+          "type": "number",
+          "near": "Total Load",
+          "value": 55,
+          "unit": "kN",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    },
+    {
+      "id": "imperial-residential-preset",
+      "note": "The same physical floor in US units.",
+      "derivation": "The preset's 5.5 kN/m² in US units is 5.5 × 20.885 = 114.87 psf (for reference, IBC residential live load alone is 40 psf, and 2 kN/m² ≈ 41.8 psf). On 100 ft²: 100 × 114.87 = 11,487 lb. A result near 550 lb would mean 3, 2 and 0.5 were taken as psf.",
+      "inputs": {
+        "Calculation Type": "area",
+        "Area (": "100"
+      },
+      "click": [
+        "Imperial",
+        "Residential Floor"
+      ],
+      "expect": [
+        {
+          "type": "number",
+          "near": "Total Load",
+          "value": 11487,
+          "unit": "lb",
+          "tolerance": {
+            "rel": 0.02
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    }
+  ]
+}

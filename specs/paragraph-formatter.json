@@ -1,0 +1,30 @@
+{
+  "slug": "paragraph-formatter",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Clean up your text by removing extra spaces, line breaks, and formatting paragraphs instantly.\"",
+  "groundTruth": "Removing extra spaces collapses each run of spaces to a single space.",
+  "cases": [
+    {
+      "id": "collapse-spaces",
+      "derivation": "\"one   two    three\" has runs of 3 and 4 spaces; collapsing each run to one space gives \"one two three\".",
+      "inputs": {
+        "Paste or type your text here...": "one   two    three"
+      },
+      "click": [
+        "Remove Extra Spaces"
+      ],
+      "expect": [
+        {
+          "type": "contains",
+          "value": "one two three",
+          "severity": "S1-critical",
+          "scope": "produced"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    }
+  ]
+}

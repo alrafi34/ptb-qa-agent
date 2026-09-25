@@ -1,0 +1,93 @@
+{
+  "slug": "parking-space-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate how many parking stalls fit in a given lot area, or how much space a target number of stalls needs.\" The form asks for Space Width, Space Length and Aisle Width, and the page notes \"90° parking provides maximum capacity but requires wider aisles\".",
+  "groundTruth": "Standard parking-module geometry: each stall occupies (stall width measured along the aisle) × (stall depth perpendicular to the aisle + half the aisle it shares). For 90° stalls the width along the aisle is the stall width and the depth is the stall length. For angle θ: width along aisle = w ÷ sin θ; depth = l·sin θ + w·cos θ.",
+  "cases": [
+    {
+      "id": "90deg-9x18-24aisle",
+      "note": "A double-loaded 90° bay that fits an exact count.",
+      "derivation": "90 ft × 60 ft lot = 5,400 sq ft. A 60 ft deep bay is one 24 ft aisle with an 18 ft stall row on each side (18 + 24 + 18 = 60). 90 ft of frontage ÷ 9 ft stalls = 10 stalls per side, × 2 sides = 20 stalls. Per stall: 9 × (18 + 24 ÷ 2) = 270 sq ft; 5,400 ÷ 270 = 20. Both methods give 20.",
+      "inputs": {
+        "Input Mode": "dimensions",
+        "Unit": "feet",
+        "Layout Type": "perpendicular",
+        "Width (ft)": "90",
+        "Length (ft)": "60",
+        "Space Width": "9",
+        "Space Length": "18",
+        "Aisle Width": "24"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Parking Capacity",
+          "value": 20,
+          "unit": "stalls",
+          "tolerance": {
+            "abs": 0.5
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    },
+    {
+      "id": "narrower-stalls-fit-more",
+      "note": "The stall and aisle inputs must drive the result.",
+      "derivation": "Same 5,400 sq ft lot with 8.5 ft × 18 ft stalls and a 24 ft aisle: per stall 8.5 × (18 + 12) = 255 sq ft; 5,400 ÷ 255 = 21.18, so 21 whole stalls. Narrower stalls must fit more cars than the 20 of the 9 ft case.",
+      "inputs": {
+        "Input Mode": "dimensions",
+        "Unit": "feet",
+        "Layout Type": "perpendicular",
+        "Width (ft)": "90",
+        "Length (ft)": "60",
+        "Space Width": "8.5",
+        "Space Length": "18",
+        "Aisle Width": "24"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Parking Capacity",
+          "value": 21,
+          "unit": "stalls",
+          "tolerance": {
+            "abs": 0.5
+          },
+          "severity": "S1-critical"
+        }
+      ]
+    },
+    {
+      "id": "45deg-needs-more-space",
+      "note": "Angled stalls use more area per car than 90°, so the same lot holds fewer.",
+      "derivation": "45°, 9 × 18 ft stalls, 13 ft one-way aisle. Width along the aisle = 9 ÷ sin 45° = 12.73 ft. Depth = 18·sin 45° + 9·cos 45° = 12.73 + 6.36 = 19.09 ft. Per stall = 12.73 × (19.09 + 13 ÷ 2) = 12.73 × 25.59 = 325.7 sq ft. 5,400 ÷ 325.7 = 16.6, so about 16 stalls (±1 for layout rounding) — fewer than the 20 at 90°.",
+      "inputs": {
+        "Input Mode": "dimensions",
+        "Unit": "feet",
+        "Layout Type": "angled-45",
+        "Width (ft)": "90",
+        "Length (ft)": "60",
+        "Space Width": "9",
+        "Space Length": "18",
+        "Aisle Width": "13"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Parking Capacity",
+          "value": 16,
+          "unit": "stalls",
+          "tolerance": {
+            "abs": 1
+          },
+          "severity": "S1-critical"
+        }
+      ]
+    }
+  ]
+}

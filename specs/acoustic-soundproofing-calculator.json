@@ -1,0 +1,55 @@
+{
+  "slug": "acoustic-soundproofing-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate how much soundproofing you need for any room. Estimate noise reduction...\"",
+  "groundTruth": "Required reduction = source level − desired level (dB). Room volume = L × W × H; surface area = 2(LW + LH + WH).",
+  "cases": [
+    {
+      "id": "4x3x2.5-room",
+      "derivation": "80 dB source to 40 dB target needs 80 − 40 = 40 dB. Volume = 4 × 3 × 2.5 = 30 m³. Surfaces = 2 × (12 + 10 + 7.5) = 59 m².",
+      "inputs": {
+        "Length (m)": "4",
+        "Width (m)": "3",
+        "Height (m)": "2.5",
+        "Noise Source Level (dB)": "80",
+        "Desired Noise Level (dB)": "40"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Required Reduction",
+          "value": 40,
+          "unit": "dB",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "number",
+          "near": "Volume",
+          "value": 30,
+          "unit": "m³",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "number",
+          "near": "Surface Area",
+          "value": 59,
+          "unit": "m²",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    }
+  ]
+}

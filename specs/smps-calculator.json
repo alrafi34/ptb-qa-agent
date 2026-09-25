@@ -1,0 +1,53 @@
+{
+  "slug": "smps-calculator",
+  "version": 1,
+  "authoredAt": "2026-09-24",
+  "contractSource": "Description: \"Calculate switching power supply parameters including output power, efficiency, input current...\"",
+  "groundTruth": "Output power = Vout × Iout. Input power = output ÷ efficiency. Loss = input − output.",
+  "cases": [
+    {
+      "id": "12V-5A-85pct",
+      "derivation": "12 V × 5 A = 60 W out. At 85% efficiency input = 60 ÷ 0.85 = 70.588 W; loss = 10.588 W.",
+      "inputs": {
+        "Output Voltage": "12",
+        "Output Current": "5",
+        "Efficiency:": "85"
+      },
+      "expect": [
+        {
+          "type": "number",
+          "near": "Output Power",
+          "value": 60,
+          "unit": "W",
+          "tolerance": {
+            "abs": 0.01
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "number",
+          "near": "Input Power:",
+          "value": 70.59,
+          "unit": "W",
+          "tolerance": {
+            "abs": 0.02
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "number",
+          "near": "Power Loss:",
+          "value": 10.59,
+          "unit": "W",
+          "tolerance": {
+            "abs": 0.02
+          },
+          "severity": "S1-critical"
+        },
+        {
+          "type": "noPoison"
+        }
+      ]
+    }
+  ]
+}
