@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { PATHS } from "./config.mjs";
+import { PATHS, LIMITS } from "./config.mjs";
 import { launchBrowser, openTool } from "./browser.mjs";
 import { discover } from "./discover.mjs";
 import * as P from "./phases.mjs";
@@ -63,6 +63,7 @@ export async function runTool({ browser, origin, tool, evidenceDir, phases = nul
   const want = (p) => !phases || phases.includes(p);
 
   let controls = [];
+  let frozen = false;
   try {
     const p1 = record(await P.p1_render(ctx));
     if (p1.blocking) {
@@ -73,14 +74,42 @@ export async function runTool({ browser, origin, tool, evidenceDir, phases = nul
       const p2 = record(await P.p2_controls(ctx));
       controls = p2.controls ?? [];
 
-      if (want("P3")) record(await P.p3_liveLogic(ctx, controls));
-      if (want("P4")) record(await P.p4_specs(ctx, controls));
-      if (want("P5")) record(await P.p5_boundaries(ctx, controls));
-      if (want("P6")) record(await P.p6_invariants(ctx, controls));
-      if (want("P7")) record(await P.p7_stateActions(ctx, controls));
-      if (want("P9")) record(await P.p9_a11y(ctx));
-      if (want("P10")) record(await P.p10_meta(ctx));
-      if (want("P8")) record(await P.p8_responsive(ctx));
+      const later = [
+        ["P3", () => P.p3_liveLogic(ctx, controls)],
+        ["P4", () => P.p4_specs(ctx, controls)],
+        ["P5", () => P.p5_boundaries(ctx, controls)],
+        ["P6", () => P.p6_invariants(ctx, controls)],
+        ["P7", () => P.p7_stateActions(ctx, controls)],
+        ["P9", () => P.p9_a11y(ctx)],
+        ["P10", () => P.p10_meta(ctx)],
+        ["P8", () => P.p8_responsive(ctx)],
+      ];
+      for (const [i, [name, run]] of later.entries()) {
+        if (!want(name)) continue;
+        // A page whose main thread freezes never answers page.evaluate, and
+        // without a deadline one tool stalls the whole run (a 10^12 plot count
+        // did exactly that). Past the deadline the phase and everything after
+        // it are recorded as incomplete (HARD RULE 1.3), never as passing.
+        const r = await withDeadline(run(), LIMITS.phaseTimeoutMs);
+        if (r !== TIMED_OUT) { record(r); continue; }
+        phaseResults[name] = {
+          phase: name, verdict: "incomplete",
+          findings: [P.finding({
+            id: `${name}/timeout`, phase: name, severity: "S2-major",
+            summary: `${name} did not finish within ${LIMITS.phaseTimeoutMs / 60000} min — the page stopped responding`,
+            expected: "the page stays responsive to every input the phase enters",
+            actual: `no response after ${LIMITS.phaseTimeoutMs / 1000} s`,
+            detail: "The main thread appears frozen. Later phases were not run for this tool.",
+            steps: [`Open ${tool.url}`, `Run phase ${name}`],
+          })],
+          evidence: { reason: "phase deadline exceeded" },
+        };
+        for (const [skipped] of later.slice(i + 1)) {
+          if (want(skipped)) phaseResults[skipped] = { phase: skipped, verdict: "incomplete", findings: [], evidence: { reason: `not run: ${name} froze the page` } };
+        }
+        frozen = true;
+        break;
+      }
     }
   } catch (e) {
     phaseResults.ERROR = {
@@ -98,7 +127,7 @@ export async function runTool({ browser, origin, tool, evidenceDir, phases = nul
 
   // Evidence: a screenshot of the tool in its exercised state.
   let screenshot = null;
-  try {
+  if (!frozen) try {
     screenshot = path.join(evidenceDir, `${tool.slug}.png`);
     await session.page.screenshot({ path: screenshot, fullPage: false });
     screenshot = path.relative(PATHS.root, screenshot);
@@ -106,7 +135,7 @@ export async function runTool({ browser, origin, tool, evidenceDir, phases = nul
 
   let domDump = null;
   const anyFailure = Object.values(phaseResults).some((p) => p.verdict === "fail");
-  if (anyFailure) {
+  if (anyFailure && !frozen) {
     try {
       const html = await session.page.content();
       const p = path.join(evidenceDir, `${tool.slug}.html`);
@@ -115,7 +144,7 @@ export async function runTool({ browser, origin, tool, evidenceDir, phases = nul
     } catch { /* non-fatal */ }
   }
 
-  await session.close();
+  await withDeadline(session.close(), 15_000);
 
   const findings = Object.values(phaseResults).flatMap((p) =>
     (p.findings ?? []).map((f) => ({
@@ -202,4 +231,13 @@ export function printRunSummary(run) {
   if (s.withoutSpec) {
     log(c.yellow(`  ! ${s.withoutSpec} tool(s) had no correctness spec — P4 did NOT verify their maths`));
   }
+}
+
+const TIMED_OUT = Symbol("timed-out");
+function withDeadline(promise, ms) {
+  let timer;
+  return Promise.race([
+    promise.catch((e) => { throw e; }),
+    new Promise((resolve) => { timer = setTimeout(() => resolve(TIMED_OUT), ms); }),
+  ]).finally(() => clearTimeout(timer));
 }

@@ -40,6 +40,7 @@ export const LIMITS = {
   settleMs: 450,          // debounce headroom — tools debounce at ~100ms
   actionTimeoutMs: 15_000,
   recheckRuns: 3,         // HARD RULE 5.1
+  phaseTimeoutMs: Number(process.env.QA_PHASE_TIMEOUT_MS || 480_000), // past this the page froze — see runner.mjs
   recheckMustFail: 3,     // 3/3 or it is FLAKY
 };
 

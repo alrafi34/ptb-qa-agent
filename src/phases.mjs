@@ -19,7 +19,7 @@ const FAIL = "fail";
 const WARN = "warn";
 const SKIP = "skipped";
 
-function finding(o) {
+export function finding(o) {
   return {
     id: o.id,
     phase: o.phase,
