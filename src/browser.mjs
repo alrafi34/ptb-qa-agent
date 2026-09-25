@@ -1,5 +1,9 @@
 import { chromium } from "playwright";
 import { CONSOLE_IGNORE, LIMITS } from "./config.mjs";
+
+/* Vercel injects these at the edge; a local server never has them, so their
+   404s say nothing about the site. */
+const VERCEL_ONLY = /\/_vercel\/(insights|speed-insights)\//;
 import { sleep } from "./util.mjs";
 
 /**
@@ -45,6 +49,9 @@ export async function openTool(browser, { origin, url, viewport }) {
     if (type !== "error" && type !== "warning") return;
     const text = msg.text();
     if (CONSOLE_IGNORE.some((re) => re.test(text))) return;
+    // "Failed to load resource" carries its URL in the location, not the text.
+    const src = msg.location?.()?.url ?? "";
+    if (src && VERCEL_ONLY.test(src)) return;
     diagnostics.console.push({
       type,
       text,
@@ -72,7 +79,7 @@ export async function openTool(browser, { origin, url, viewport }) {
   });
 
   page.on("response", (res) => {
-    if (res.status() >= 400) {
+    if (res.status() >= 400 && !VERCEL_ONLY.test(res.url())) {
       diagnostics.responses.push({ url: res.url(), status: res.status() });
     }
   });

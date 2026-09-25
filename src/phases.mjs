@@ -329,13 +329,20 @@ export async function p4_specs(ctx, controls) {
     // inside the tool region, so the only text that is certainly this case's
     // own output is the text that was not there beforehand.
     const baselineText = normaliseText(await liveText(page));
-    const fresh = await inventory(page);
+    let fresh = await inventory(page);
 
     const steps = [`Open ${tool.url}`];
     let setupOk = true;
 
     for (const [field, value] of Object.entries(tc.inputs ?? {})) {
-      const ctl = resolveControl(fresh, field);
+      let ctl = resolveControl(fresh, field);
+      if (!ctl) {
+        // A field that only mounts after an earlier input (a mode select, a
+        // unit toggle) is not in the inventory taken before filling began.
+        await sleep(LIMITS.settleMs);
+        fresh = await inventory(page);
+        ctl = resolveControl(fresh, field);
+      }
       if (!ctl) {
         findings.push(finding({
           id: `P4/missing-field/${caseId}/${field}`, phase: "P4", severity: "S2-major",
@@ -362,7 +369,11 @@ export async function p4_specs(ctx, controls) {
     if (!setupOk) { caseResults.push({ caseId, verdict: "setup-failed" }); continue; }
 
     for (const label of tc.click ?? []) {
-      const btn = resolveControl(fresh, label, "action");
+      let btn = resolveControl(fresh, label, "action");
+      if (!btn) {
+        fresh = await inventory(page);
+        btn = resolveControl(fresh, label, "action");
+      }
       if (btn) { await clickControl(page, btn); steps.push(`Click "${btn.name || btn.text}"`); }
     }
     await sleep(tc.waitMs ?? LIMITS.settleMs);
