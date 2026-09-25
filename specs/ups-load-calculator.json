@@ -7,11 +7,10 @@
   "cases": [
     {
       "id": "desktop-300W",
-      "note": "The default device list holds one 300 W desktop PC.",
+      "note": "The default device list holds one 300 W desktop PC; the power factor control is not shown by default and defaults to 0.8.",
       "derivation": "300 W × 1.20 margin = 360 W; ÷ 0.8 PF = 450 VA. The next standard UPS size at or above 450 VA is 500 VA.",
       "inputs": {
-        "Safety Margin:": "20",
-        "Power Factor:": "0.8"
+        "Safety Margin": "20"
       },
       "expect": [
         {
@@ -22,7 +21,8 @@
           "tolerance": {
             "abs": 0.5
           },
-          "severity": "S1-critical"
+          "severity": "S1-critical",
+          "scope": "page"
         },
         {
           "type": "number",
@@ -32,7 +32,8 @@
           "tolerance": {
             "abs": 0.5
           },
-          "severity": "S1-critical"
+          "severity": "S1-critical",
+          "scope": "page"
         },
         {
           "type": "noPoison"
