@@ -158,7 +158,9 @@ export function probeValueFor(ctl, variant = 0) {
   if (ctl.tag === "select") {
     const opts = (ctl.options ?? []).filter((o) => o.value !== "");
     if (!opts.length) return null;
-    return opts[Math.min(variant + (opts.length > 1 ? 1 : 0), opts.length - 1)].value;
+    // Wrap rather than clamp: clamping gave variants 0 and 1 the same option
+    // on a two-option select, so P3 "changed" it from X to X.
+    return opts[(variant + (opts.length > 1 ? 1 : 0)) % opts.length].value;
   }
   if (ctl.type === "checkbox" || ctl.type === "radio") return variant % 2 === 0;
   if (ctl.type === "color") return ["#3366cc", "#cc3366"][variant % 2];

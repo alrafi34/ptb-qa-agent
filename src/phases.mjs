@@ -221,12 +221,24 @@ export async function p3_liveLogic(ctx, controls) {
     }));
   }
 
+  // Two probe values name the same state when they read back identically
+  // ("85" / "85.0", true / "true").
+  const sameValue = (a, b) => {
+    const x = String(a).trim(), y = String(b ?? "").trim();
+    return x === y || (x !== "" && y !== "" && Number.isFinite(Number(x)) && Number(x) === Number(y));
+  };
+
   // Now change one input at a time and require the output to move.
   for (const c of inputs) {
     const before = await snapshot(page);
-    const v1 = probeValueFor(c, 1);
-    if (v1 === null) continue;
     const prevValue = await readControl(page, c.selector);
+    // Probe with a value that differs from what the control holds now; with no
+    // alternative (single-option select) there is nothing to test.
+    const v1 = [1, 2, 0].map((k) => probeValueFor(c, k)).find((v) => v !== null && !sameValue(v, prevValue)) ?? null;
+    if (v1 === null) {
+      results.push({ control: c.name || c.selector, from: prevValue, to: null, changed: null, skipped: "no value different from the current one" });
+      continue;
+    }
     const set = await setControl(page, c, v1);
     if (!set.ok) {
       findings.push(finding({
