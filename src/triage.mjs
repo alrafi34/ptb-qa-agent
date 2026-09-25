@@ -3,6 +3,7 @@ import { PATHS, LIMITS } from "./config.mjs";
 import { launchBrowser } from "./browser.mjs";
 import { discover } from "./discover.mjs";
 import { runTool } from "./runner.mjs";
+import { serverAlive } from "./devserver.mjs";
 import { ensureDir, readJson, writeJson, c, log, truncate } from "./util.mjs";
 
 /**
@@ -62,6 +63,11 @@ export async function triage({ runId, origin, browser, headed = false, onProgres
           evidenceDir: ensureDir(path.join(evidenceDir, `attempt-${attempt}`)),
           phases: phases.length ? phases : null,
         });
+        // Without this a server that died mid-triage made every remaining
+        // finding "not reproduced". Fail loudly; no queue is written.
+        if (!(await serverAlive(origin))) {
+          throw new Error(`Server at ${origin} stopped responding while replaying ${slug} (attempt ${attempt}). Triage aborted; nothing was written — re-run it.`);
+        }
         for (const f of res.findings) {
           const k = reproKey(f);
           seenCount.set(k, (seenCount.get(k) ?? 0) + 1);

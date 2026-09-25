@@ -19,6 +19,25 @@ function portFree(port) {
   });
 }
 
+/**
+ * True while the server still answers. Runs and triages call this between
+ * tools: a server that dies mid-run turns every later check into a navigation
+ * failure, which triage would otherwise record as "not reproduced".
+ */
+export async function serverAlive(origin, timeoutMs = 15_000) {
+  try {
+    const res = await fetch(`${origin}/`, { signal: AbortSignal.timeout(timeoutMs) });
+    return res.status < 500;
+  } catch {
+    return false;
+  }
+}
+
+async function firstFreePort(from, tries = 50) {
+  for (let p = from; p < from + tries; p++) if (await portFree(p)) return p;
+  throw new Error(`No free port in ${from}-${from + tries - 1}`);
+}
+
 async function waitForHttp(url, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   let lastErr = null;
@@ -63,14 +82,20 @@ async function stopTree(child, exited) {
   }
 }
 
-export async function startServer({ mode = "dev", port = SERVER.port, quiet = true } = {}) {
+export async function startServer({ mode = "dev", port = SERVER.port, quiet = true, reuse = false } = {}) {
   if (!(await portFree(port))) {
-    // Something is already serving here. Use it rather than fighting over the
-    // port, but say so — a stale server from a previous run would silently
-    // serve stale code.
-    log(c.yellow(`  ! port ${port} already in use — reusing whatever is serving it`));
-    await waitForHttp(`http://127.0.0.1:${port}/`, 15_000);
-    return { origin: `http://127.0.0.1:${port}`, stop: async () => {}, reused: true };
+    if (reuse) {
+      // Explicit --reuse-server: the caller vouches for whatever is serving.
+      log(c.yellow(`  ! port ${port} already in use — reusing it (--reuse-server)`));
+      await waitForHttp(`http://127.0.0.1:${port}/`, 15_000);
+      return { origin: `http://127.0.0.1:${port}`, stop: async () => {}, reused: true };
+    }
+    // Usually an orphan from an interrupted run. Reusing it silently served
+    // stale code, or died halfway through a triage; start a fresh server of
+    // our own next to it instead.
+    const free = await firstFreePort(port + 1);
+    log(c.yellow(`  ! port ${port} is held by another process — starting a fresh server on :${free} (pass --reuse-server to use the existing one)`));
+    port = free;
   }
 
   const args = mode === "prod"

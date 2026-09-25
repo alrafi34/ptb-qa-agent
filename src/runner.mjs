@@ -3,6 +3,7 @@ import path from "node:path";
 import { PATHS, LIMITS } from "./config.mjs";
 import { launchBrowser, openTool } from "./browser.mjs";
 import { discover } from "./discover.mjs";
+import { serverAlive } from "./devserver.mjs";
 import * as P from "./phases.mjs";
 import { ensureDir, readJson, writeJson, runId as newRunId, c, log, truncate, fingerprint } from "./util.mjs";
 
@@ -33,11 +34,19 @@ export async function runScope({
 
   const results = [];
   const startedAt = new Date().toISOString();
+  let aborted = null;
 
   try {
     for (const [i, tool] of scope.entries()) {
       onProgress({ index: i + 1, total: scope.length, tool });
       const res = await runTool({ browser: b, origin, tool, evidenceDir });
+      // A dead server makes this tool's findings navigation noise, and every
+      // later tool's too. Drop the result and stop rather than record them.
+      if (!(await serverAlive(origin))) {
+        aborted = { atTool: tool.slug, reason: `server at ${origin} stopped responding` };
+        log(c.red(`  ! ${aborted.reason} during ${tool.slug} — run stopped; its result was discarded`));
+        break;
+      }
       results.push(res);
       // Write incrementally so a long run is never lost.
       writeJson(path.join(runDir, "run.json"), buildRun({ runId, startedAt, origin, category, only, scope, results }));
@@ -46,7 +55,7 @@ export async function runScope({
     if (ownBrowser) await b.close().catch(() => {});
   }
 
-  const run = buildRun({ runId, startedAt, origin, category, only, scope, results, finishedAt: new Date().toISOString() });
+  const run = { ...buildRun({ runId, startedAt, origin, category, only, scope, results, finishedAt: new Date().toISOString() }), ...(aborted && { aborted }) };
   writeJson(path.join(runDir, "run.json"), run);
   writeJson(PATHS.lastRun, { runId, dir: runDir, finishedAt: run.finishedAt });
   return run;
@@ -90,15 +99,25 @@ export async function runTool({ browser, origin, tool, evidenceDir, phases = nul
         // without a deadline one tool stalls the whole run (a 10^12 plot count
         // did exactly that). Past the deadline the phase and everything after
         // it are recorded as incomplete (HARD RULE 1.3), never as passing.
-        const r = await withDeadline(run(), LIMITS.phaseTimeoutMs);
+        // A slow phase is not a frozen page: a tool with nine inputs runs ~90
+        // P5 cases with a reload each. At every deadline, probe the page; keep
+        // waiting while it still answers, up to a hard cap.
+        const pending = run();
+        let r = TIMED_OUT;
+        for (let waited = 0; waited < LIMITS.phaseHardCapMs; waited += LIMITS.phaseTimeoutMs) {
+          r = await withDeadline(pending, LIMITS.phaseTimeoutMs);
+          if (r !== TIMED_OUT) break;
+          const responsive = await withDeadline(session.page.evaluate(() => 1).then(() => true, () => false), 15_000);
+          if (responsive !== true) break;
+        }
         if (r !== TIMED_OUT) { record(r); continue; }
         phaseResults[name] = {
           phase: name, verdict: "incomplete",
           findings: [P.finding({
             id: `${name}/timeout`, phase: name, severity: "S2-major",
-            summary: `${name} did not finish within ${LIMITS.phaseTimeoutMs / 60000} min — the page stopped responding`,
+            summary: `${name} did not finish — the page stopped responding to the runner`,
             expected: "the page stays responsive to every input the phase enters",
-            actual: `no response after ${LIMITS.phaseTimeoutMs / 1000} s`,
+            actual: `page.evaluate did not answer within 15 s after the ${LIMITS.phaseTimeoutMs / 1000} s phase deadline`,
             detail: "The main thread appears frozen. Later phases were not run for this tool.",
             steps: [`Open ${tool.url}`, `Run phase ${name}`],
           })],

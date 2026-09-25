@@ -171,7 +171,7 @@ ${c.dim(`Repo: ${DEFAULT_REPO}   Site: ${PATHS.site}`)}
     }
     log("");
 
-    const server = await startServer({ mode, port, quiet: !has("verbose") });
+    const server = await startServer({ mode, port, quiet: !has("verbose"), reuse: has("reuse-server") });
     const started = Date.now();
     try {
       const run = await runScope({
@@ -191,7 +191,14 @@ ${c.dim(`Repo: ${DEFAULT_REPO}   Site: ${PATHS.site}`)}
       log(`  raw:     reports/${id}/run.json`);
       log(`  elapsed: ${Math.round((Date.now() - started) / 1000)}s`);
       log("");
-      log(c.dim(`  Next: qa triage --run ${id}`));
+      if (run.aborted) {
+        // The results stop at the tool before the server died; triaging them
+        // is fine, but the run is not a complete audit of its scope.
+        log(c.red(`  ABORTED at ${run.aborted.atTool}: ${run.aborted.reason}. Fix the server and re-run.`));
+        process.exitCode = 1;
+      } else {
+        log(c.dim(`  Next: qa triage --run ${id}`));
+      }
       log("");
     } finally {
       if (has("keep-server")) server.detach?.();
@@ -203,7 +210,7 @@ ${c.dim(`Repo: ${DEFAULT_REPO}   Site: ${PATHS.site}`)}
     const id = currentRunId();
     const port = Number(flag("port", SERVER.port));
     const mode = has("prod") ? "prod" : "dev";
-    const server = await startServer({ mode, port, quiet: !has("verbose") });
+    const server = await startServer({ mode, port, quiet: !has("verbose"), reuse: has("reuse-server") });
     try {
       log("");
       log(c.dim(`  re-running every failure ${LIMITS.recheckRuns}x in fresh browser contexts ...`));
