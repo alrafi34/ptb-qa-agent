@@ -16,6 +16,16 @@ function read(p) {
   return fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "";
 }
 
+/**
+ * Drop commented-out code before parsing. The registry keeps retired tools as
+ * `//{ slug: ... }` lines; those are not on the site and must not be audited.
+ * Only whole-line `//` comments are removed, so a "https://" inside a
+ * description string is left alone.
+ */
+function stripComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^[ \t]*\/\/.*$/gm, "");
+}
+
 function parseToolEntries(src) {
   // Entries are written one per line as object literals.
   const out = [];
@@ -45,11 +55,11 @@ function parseCategories(src) {
   return out;
 }
 
-/** Slugs the dynamic [tool]/[subtool] route can serve. */
+/** slug -> tool directory, for every slug the dynamic [tool]/[subtool] route can serve. */
 function parseDynamicRouteSlugs() {
   const p = path.join(PATHS.appTools, "[tool]", "[subtool]", "page.tsx");
-  const src = read(p);
-  if (!src) return new Set();
+  const src = stripComments(read(p));
+  if (!src) return new Map();
 
   // alias -> tool directory, from the config imports at the top of the file
   const aliasToDir = new Map();
@@ -59,17 +69,36 @@ function parseDynamicRouteSlugs() {
 
   // TOOLS array entries reference those aliases
   const startIdx = src.indexOf("const TOOLS");
-  if (startIdx < 0) return new Set();
+  if (startIdx < 0) return new Map();
   const endIdx = src.indexOf("\n];", startIdx);
   const block = src.slice(startIdx, endIdx < 0 ? undefined : endIdx);
 
-  const slugs = new Set();
+  // The route matches on the config's own slug, which is not always the
+  // directory name (tools/aes-encryptor serves text-encryptor-aes).
+  const slugs = new Map();
   const entryRe = /\{\s*config:\s*([A-Za-z0-9_$]+)\s*,/g;
   while ((m = entryRe.exec(block))) {
     const dir = aliasToDir.get(m[1]);
-    if (dir) slugs.add(dir);
+    if (dir) slugs.set(declaredSlug(dir) ?? dir, dir);
   }
   return slugs;
+}
+
+/** The tools/<dir> a dedicated page renders, read from its imports. */
+function dedicatedSourceDir(pageFile) {
+  const m = read(pageFile).match(/["']@\/tools\/([^/"']+)\//);
+  return m ? m[1] : null;
+}
+
+/** slug -> directory for every tools/<dir>/config.ts that declares a slug. */
+function declaredSlugIndex() {
+  const idx = new Map();
+  if (!fs.existsSync(PATHS.toolsDir)) return idx;
+  for (const dir of fs.readdirSync(PATHS.toolsDir)) {
+    const slug = declaredSlug(dir);
+    if (slug && !idx.has(slug)) idx.set(slug, dir);
+  }
+  return idx;
 }
 
 /** Read the slug a tool's own config.ts declares, when it has one. */
@@ -80,11 +109,12 @@ function declaredSlug(toolDir) {
 }
 
 export function discover({ category = null, tools: only = null } = {}) {
-  const src = read(PATHS.toolsConfig);
+  const src = stripComments(read(PATHS.toolsConfig));
   if (!src) throw new Error(`Cannot read ${PATHS.toolsConfig}`);
 
   const categories = parseCategories(src);
   const dynamicSlugs = parseDynamicRouteSlugs();
+  const bySlug = declaredSlugIndex();
   const all = parseToolEntries(src);
 
   // config/tools.ts has duplicate slugs in places; first entry wins, and the
@@ -100,8 +130,16 @@ export function discover({ category = null, tools: only = null } = {}) {
     const dedicatedPath = path.join(PATHS.appTools, t.category, t.slug, "page.tsx");
     const hasDedicated = fs.existsSync(dedicatedPath);
     const inDynamic = dynamicSlugs.has(t.slug);
-    const toolDir = path.join(PATHS.toolsDir, t.slug);
-    const hasSource = fs.existsSync(toolDir);
+    // Folder name and slug differ for some tools, so resolve the directory the
+    // page actually renders before falling back to the slug.
+    const dirName = [
+      hasDedicated ? dedicatedSourceDir(dedicatedPath) : null,
+      dynamicSlugs.get(t.slug),
+      bySlug.get(t.slug),
+      t.slug,
+    ].find((d) => d && fs.existsSync(path.join(PATHS.toolsDir, d)));
+    const toolDir = dirName ? path.join(PATHS.toolsDir, dirName) : null;
+    const hasSource = Boolean(toolDir);
 
     return {
       ...t,
@@ -116,7 +154,7 @@ export function discover({ category = null, tools: only = null } = {}) {
       files: hasSource
         ? fs.readdirSync(toolDir).filter((f) => !f.startsWith("."))
         : [],
-      declaredSlug: hasSource ? declaredSlug(t.slug) : null,
+      declaredSlug: hasSource ? declaredSlug(dirName) : null,
       specPath: path.join(PATHS.specs, `${t.slug}.json`),
       hasSpec: fs.existsSync(path.join(PATHS.specs, `${t.slug}.json`)),
     };
