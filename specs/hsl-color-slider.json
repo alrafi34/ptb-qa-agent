@@ -16,10 +16,11 @@
       "expect": [
         {
           "type": "matches",
-          "value": "#?336699",
+          "value": "hex\\s*#?336699",
           "flags": "i",
           "severity": "S1-critical",
-          "what": "hex of hsl(210,50%,40%)"
+          "what": "hex of hsl(210,50%,40%)",
+          "scope": "page"
         },
         {
           "type": "noPoison"
@@ -37,10 +38,11 @@
       "expect": [
         {
           "type": "matches",
-          "value": "#?FF0000",
+          "value": "hex\\s*#?FF0000",
           "flags": "i",
           "severity": "S2-major",
-          "what": "hsl(360,100%,50%) must be red"
+          "what": "hsl(360,100%,50%) must be red",
+          "scope": "page"
         }
       ]
     }
