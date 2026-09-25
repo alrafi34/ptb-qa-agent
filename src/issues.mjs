@@ -91,7 +91,7 @@ qa_phase: ${f.phase}
 qa_severity: ${f.severity}
 qa_fingerprint: ${f.fingerprint}
 qa_title: ${title}
-qa_labels: bug, qa-automated, ${f.severity}, ${f.category}
+qa_labels: bug, qa-automated, ${f.severity}
 ---
 
 ## Summary

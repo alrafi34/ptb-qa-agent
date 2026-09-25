@@ -2,8 +2,10 @@ import { chromium } from "playwright";
 import { CONSOLE_IGNORE, LIMITS } from "./config.mjs";
 
 /* Vercel injects these at the edge; a local server never has them, so their
-   404s say nothing about the site. */
-const VERCEL_ONLY = /\/_vercel\/(insights|speed-insights)\//;
+   404s say nothing about the site. Third-party analytics fail on the network
+   now and then (ERR_CONNECTION_RESET from googletagmanager.com) — also not
+   the site's code. */
+const VERCEL_ONLY = /\/_vercel\/(insights|speed-insights)\/|^https:\/\/(www\.)?(googletagmanager|google-analytics)\.com\//;
 import { sleep } from "./util.mjs";
 
 /**
